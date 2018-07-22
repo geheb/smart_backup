@@ -1,2 +1,2 @@
 # smart_backup
-Simple backup based on 7-Zip compression
+Simple incremental backup based on 7-Zip compression
