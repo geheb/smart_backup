@@ -31,7 +31,7 @@ Task("zip")
 	CreateDirectory(target7zipDir);
 	CopyFiles(packagesDirectory.ToString() + "/7-zip.commandline/**/tools/x64/*", target7zipDir);
 	
-	CopyFiles("./LICENSE.txt", buildConfigDirectory);
+	CopyFile("./LICENSE", buildConfigDirectory.ToString() + "/LICENSE.txt");
 	CopyFiles("./LICENSE-3RD-PARTY.txt", buildConfigDirectory);
 	
 	var ignoredExt = new string[] { ".xml", ".pdb" };
