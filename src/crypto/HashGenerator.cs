@@ -19,7 +19,7 @@ namespace geheb.smart_backup.crypto
         {
             var fi = new FileInfo(file);
             if (fi.Length < 1)
-                return string.Empty;
+                return "0000000000000000000000000000000000000000000000000000000000000000";
 
             using (var bf = new BufferedStream(fi.OpenRead(), 1024 * 1024))
             {

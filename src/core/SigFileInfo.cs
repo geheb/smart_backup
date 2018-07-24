@@ -53,7 +53,10 @@ namespace geheb.smart_backup.core
         public static SigFileInfo Parse(string line)
         {
             var items = line.Split(new[] { Separator }, StringSplitOptions.RemoveEmptyEntries);
-            if (items.Length != 4) return null;
+            if (items.Length != 4)
+            {
+                throw new InvalidDataException("Invalid sig info: " + line);
+            }
 
             if (items[0].Length < 2 ||
                 !long.TryParse(items[1], out var length) ||
