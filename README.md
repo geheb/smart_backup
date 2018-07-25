@@ -1,7 +1,9 @@
 # smart_backup
 Simple incremental backup based on 7-Zip compression and encryption.
 
-<img src="https://raw.github.com/geheb/smart_backup/master/logo.svg?sanitize=true">
+<p align="center">
+	<img src="https://raw.github.com/geheb/smart_backup/master/logo.svg?sanitize=true">
+</p>
 
 ## Prerequisites
 * Windows 10
