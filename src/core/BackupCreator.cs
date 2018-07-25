@@ -87,22 +87,20 @@ namespace geheb.smart_backup.core
 
         IEnumerable<string> FindExistentSigFiles(SigFileInfo sigFile)
         {
-            if (_backupArgs.HistoryCount < 1) return new string[0];
             var files = new List<string>();
-
             var searchPattern = sigFile.Sha256 + SigFileCreator.FileExtension;
 
             var file = Directory.EnumerateFiles(_currentBackupDirectory, searchPattern, SearchOption.TopDirectoryOnly).FirstOrDefault();
-
             if (file != null)
             {
                 files.Add(file);
             }
 
+            if (_backupArgs.HistoryCount < 1) return files;
+
             foreach (var directory in _currentBackupDirectoryStructure.Keys)
             {
                 file = Directory.EnumerateFiles(directory, searchPattern, SearchOption.TopDirectoryOnly).FirstOrDefault();
-
                 if (file != null)
                 {
                     files.Add(file);

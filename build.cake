@@ -21,7 +21,7 @@ Task("build-anycpu")
 		.SetVerbosity(Verbosity.Minimal));
 });
 
-Task("zip")
+Task("release")
 	.Does(() =>
 {
 	var target7zipDir = buildConfigDirectory + Directory("7-zip");
@@ -44,7 +44,7 @@ Task("zip")
 Task("build")
 	.IsDependentOn("clean")
 	.IsDependentOn("build-anycpu")
-	.IsDependentOn("zip")
+	.IsDependentOn("release")
 	.Does(() =>
 {
 });
