@@ -55,7 +55,7 @@ namespace geheb.smart_backup.core
 
         void ReadCurrentBackupDirectoryStructure()
         {
-            if (_backupArgs.HistoryCount < 1) return;
+            if (_backupArgs.MaxBackupSets < 1) return;
 
             // read all directories and order by descending
             foreach (var dir in Directory.EnumerateDirectories(_backupArgs.Target, "*", SearchOption.TopDirectoryOnly))
@@ -78,7 +78,7 @@ namespace geheb.smart_backup.core
             int count = 1; // current backup directory included
             foreach (var directory in _currentBackupDirectoryStructure.Keys.ToArray())
             {
-                if (++count > _backupArgs.HistoryCount)
+                if (++count > _backupArgs.MaxBackupSets)
                 {
                     _currentBackupDirectoryStructure.Remove(directory);
                 }
@@ -96,7 +96,7 @@ namespace geheb.smart_backup.core
                 files.Add(file);
             }
 
-            if (_backupArgs.HistoryCount < 1) return files;
+            if (_backupArgs.MaxBackupSets < 1) return files;
 
             foreach (var directory in _currentBackupDirectoryStructure.Keys)
             {
@@ -112,6 +112,8 @@ namespace geheb.smart_backup.core
 
         void CleanupBackupDirectory()
         {
+            if (_backupArgs.MaxBackupSets < 1) return;
+
             _logger.Trace("Clean up backup directory...");
 
             foreach (var directory in Directory.EnumerateDirectories(_backupArgs.Target, "*", SearchOption.TopDirectoryOnly))

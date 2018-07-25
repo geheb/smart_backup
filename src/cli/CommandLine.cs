@@ -87,9 +87,9 @@ namespace geheb.smart_backup.cli
                 .As('i', "ignore")
                 .WithDescription("Which files should be ignored (use regex pattern)");
 
-            parser.Setup(arg => arg.HistoryCount)
-                .As('h', "historycount")
-                .WithDescription("How many backup sets should be preserved");
+            parser.Setup(arg => arg.MaxBackupSets)
+                .As('m', "maxbackupsets")
+                .WithDescription("How many backup sets should be created");
 
             var result = parser.Parse(args.Skip(1).ToArray());
             if (result.HelpCalled) return false;

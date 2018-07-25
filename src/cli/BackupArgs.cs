@@ -17,6 +17,6 @@ namespace geheb.smart_backup.cli
 
         public string Password { get; set; }
 
-        public int HistoryCount { get; set; }
+        public int MaxBackupSets { get; set; }
     }
 }
