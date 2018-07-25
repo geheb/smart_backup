@@ -14,6 +14,7 @@ Task("clean")
 Task("build-anycpu")
 	.Does(() =>
 {
+	NuGetRestore(solutionFile);
 	MSBuild(solutionFile, settings => settings
 		.SetConfiguration(configuration)
 		.SetPlatformTarget(PlatformTarget.MSIL)
