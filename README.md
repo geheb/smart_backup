@@ -1,4 +1,4 @@
-# smart_backup
+# smart_backup [![Build status](https://ci.appveyor.com/api/projects/status/5cn0gm9at2quej7l/branch/master?svg=true)](https://ci.appveyor.com/project/gethomast/smart-backup/branch/master)
 Simple incremental backup based on 7-Zip compression and encryption.
 
 <p align="center">
