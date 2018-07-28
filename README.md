@@ -19,7 +19,7 @@ Make a backup of the folder C:\foo and save it in the c:\backup folder with pass
 
 	smart_backup backup -f "C:\foo" -t "C:\backup" -p "bar" -m 30
 
-Make a backup of the folder C:\foo and C:\bar, save it in the c:\backup folder with password bar, keep a maximum of 30 backup sets:
+Make a backup of the folder C:\foo and C:\bar, save it in the c:\backup folder with password baz, keep a maximum of 30 backup sets:
 
 	smart_backup backup -f "c:\foo" "c:\bar" -t "C:\backup" -p "baz" -m 30
 
