@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace geheb.smart_backup.crypto
 {
-    sealed class HashGenerator : IDisposable
+    internal sealed class HashGenerator : IDisposable
     {
         readonly HashAlgorithm _hash = SHA256.Create();
 

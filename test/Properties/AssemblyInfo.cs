@@ -5,10 +5,10 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("smart_backup")]
-[assembly: AssemblyDescription("Simple incremental backup")]
+[assembly: AssemblyTitle("smart_backup_test")]
+[assembly: AssemblyDescription("smart_backup unit tests")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Geheb")]
+[assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("smart_backup")]
 [assembly: AssemblyCopyright("Copyright © 2018-present Geheb")]
 [assembly: AssemblyTrademark("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("50f22aa6-3c1b-45dd-bcae-72dccc36d35a")]
+[assembly: Guid("13d5da77-a438-4e61-b33b-49afe4871f20")]
 
 // Version information for an assembly consists of the following four values:
 //
@@ -34,5 +34,3 @@ using System.Runtime.InteropServices;
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
-
-[assembly: InternalsVisibleTo("smart_backup_test")]
