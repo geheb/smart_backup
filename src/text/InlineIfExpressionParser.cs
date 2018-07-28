@@ -11,7 +11,7 @@ namespace geheb.smart_backup.text
     /// simple parser for inline if: {condition ? first_expression : second_expression}
     /// allowed equality operators: <, >, =
     /// </summary>
-    sealed class InlineIfExpressionParser
+    internal sealed class InlineIfExpressionParser
     {
         readonly string _originalArgs;
         readonly int _index;
@@ -49,19 +49,14 @@ namespace geheb.smart_backup.text
 
         public string Calc(string conditionVar, long value)
         {
-            string param;
-            if (conditionVar != _conditionVar)
-            {
-                param = _else;
-            }
-            else
+            string param = _else;
+            if (conditionVar == _conditionVar)
             {
                 switch (_equality)
                 {
                     case "<": param = value < _conditionValue ? _then : _else; break;
                     case ">": param = value > _conditionValue ? _then : _else; break;
                     case "=": param = value == _conditionValue ? _then : _else; break;
-                    default: param = _else; break;
                 }
             }
             return _originalArgs.Substring(0, _index) + param + _originalArgs.Substring(_index + _length);

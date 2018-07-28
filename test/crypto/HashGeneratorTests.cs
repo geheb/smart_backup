@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using geheb.smart_backup.crypto;
 using Xunit;
 
-namespace geheb.smart_backup.test
+namespace geheb.smart_backup.test.crypto
 {
     public class HashGeneratorTests : IDisposable
     {
@@ -36,15 +36,15 @@ namespace geheb.smart_backup.test
         [Fact]
         public void ComputeHash_FileWithContent_ExpectsValue()
         {
-            var emptyFile = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            var file = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             try
             {
-                File.WriteAllText(emptyFile, "foobar");
-                Assert.Equal("c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2", _hashGenerator.Compute(emptyFile));
+                File.WriteAllText(file, "foobar");
+                Assert.Equal("c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2", _hashGenerator.Compute(file));
             }
             finally
             {
-                File.Delete(emptyFile);
+                File.Delete(file);
             }
         }
 

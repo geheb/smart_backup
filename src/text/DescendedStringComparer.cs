@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace geheb.smart_backup.text
 {
-    sealed class DescendedStringComparer : IComparer<string>
+    internal sealed class DescendedStringComparer : IComparer<string>
     {
         readonly StringComparison _comparison;
 

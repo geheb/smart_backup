@@ -46,8 +46,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="HashGeneratorTests.cs" />
+    <Compile Include="text\DescendedStringComparerTests.cs" />
+    <Compile Include="crypto\HashGeneratorTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="text\InlineIfExpressionParserTests.cs" />
+    <Compile Include="text\StringExtensionsTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\src\smart_backup.csproj">
