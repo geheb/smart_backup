@@ -46,6 +46,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="io\BatchFileReaderTests.cs" />
+    <Compile Include="io\FileEnumeratorTests.cs" />
+    <Compile Include="io\FileExtensionsTests.cs" />
+    <Compile Include="io\FileFactoryTests.cs" />
     <Compile Include="text\DescendedStringComparerTests.cs" />
     <Compile Include="crypto\HashGeneratorTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

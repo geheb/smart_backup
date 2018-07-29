@@ -8,14 +8,14 @@ using System.Threading.Tasks;
 
 namespace geheb.smart_backup.io
 {
-    static class FileExtensions
+    internal static class FileExtensions
     {
         public static async Task Copy(this FileInfo sourceFile, string destinationFile, CancellationToken cancel)
         {
             try
             {
-                using (var sourceStream = FileFactory.OpenAsFileStream(sourceFile.FullName))
-                using (var destinationStream = FileFactory.CreateAsFileStream(destinationFile))
+                using (var sourceStream = FileFactory.Open(sourceFile.FullName))
+                using (var destinationStream = FileFactory.Create(destinationFile))
                 {
                     await sourceStream.CopyToAsync(destinationStream, 1024 * 1024, cancel).ConfigureAwait(false);
                 }
@@ -27,12 +27,11 @@ namespace geheb.smart_backup.io
             }
         }
 
-        public static void DeleteIfExists(this FileInfo sourceFile)
+        public static bool DeleteIfExists(this FileInfo sourceFile)
         {
-            if (sourceFile.Exists)
-            {
-                sourceFile.Delete();
-            }
+            if (!sourceFile.Exists) return false;
+            sourceFile.Delete();
+            return true;
         }
     }
 }

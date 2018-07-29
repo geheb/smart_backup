@@ -81,7 +81,7 @@ namespace geheb.smart_backup.core
                     await sigFileInfo.Copy(sigFileTempInfo.FullName, _cancel).ConfigureAwait(false);
                 }
 
-                using (var writer = new StreamWriter(FileFactory.OpenAndAppendAsFileStream(sigFileTempInfo.FullName)))
+                using (var writer = new StreamWriter(FileFactory.Append(sigFileTempInfo.FullName)))
                 {
                     await writer.WriteAsync(metaInfo.Serialize()).ConfigureAwait(false);
                 }

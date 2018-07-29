@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NLog;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -9,8 +10,10 @@ using System.Threading.Tasks;
 
 namespace geheb.smart_backup.io
 {
-    sealed class FileEnumerator : IDisposable
+    internal sealed class FileEnumerator : IDisposable
     {
+        static readonly Logger _logger = LogManager.GetCurrentClassLogger();
+
         readonly List<FileInfo> _currentFiles = new List<FileInfo>();
         readonly IEnumerator<FileInfo> _currentFileEnumerator;
         readonly List<Regex> _ignorePatterns = new List<Regex>();
@@ -33,7 +36,7 @@ namespace geheb.smart_backup.io
         {
             _currentFiles.Clear();
 
-            while (_currentFiles.Count < count && _currentFileEnumerator.MoveNext())
+            while (count > 0 && _currentFiles.Count < count && _currentFileEnumerator.MoveNext())
             {
                 _currentFiles.Add(_currentFileEnumerator.Current);
             }
@@ -67,8 +70,7 @@ namespace geheb.smart_backup.io
                     var directoryInfo = new DirectoryInfo(p);
                     if (!directoryInfo.Exists) continue;
 
-                    foreach (var fileInfo in
-                        EnumerateAndCatchUnauthorizedAccess(directoryInfo.EnumerateFiles("*", SearchOption.AllDirectories)))
+                    foreach (var fileInfo in EnumerateAllFiles(directoryInfo))
                     {
                         cancel.ThrowIfCancellationRequested();
 
@@ -80,9 +82,20 @@ namespace geheb.smart_backup.io
             }
         }
 
-        IEnumerable<T> EnumerateAndCatchUnauthorizedAccess<T>(IEnumerable<T> source)
+        IEnumerable<FileInfo> EnumerateAllFiles(DirectoryInfo directoryInfo)
         {
-            using (var enumerator = source.GetEnumerator())
+            IEnumerable<FileInfo> files = null;
+            try
+            {
+                files = directoryInfo.EnumerateFiles("*", SearchOption.AllDirectories);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.Warn(ex);
+                yield break;
+            }
+
+            using (var enumerator = files.GetEnumerator())
             {
                 bool? hasCurrent;
                 do
@@ -92,8 +105,9 @@ namespace geheb.smart_backup.io
                     {
                         hasCurrent = enumerator.MoveNext();
                     }
-                    catch (UnauthorizedAccessException)
+                    catch (UnauthorizedAccessException ex)
                     {
+                        _logger.Warn(ex);
                     }
 
                     if (hasCurrent ?? false)

@@ -8,14 +8,14 @@ using System.Threading.Tasks;
 
 namespace geheb.smart_backup.io
 {
-    sealed class BatchFileReader : IDisposable
+    internal sealed class BatchFileReader : IDisposable
     {
         readonly TextReader _reader;
         readonly List<string> _items = new List<string>();
 
         public BatchFileReader(string file)
         {
-            _reader = new StreamReader(FileFactory.OpenAsFileStream(file));
+            _reader = new StreamReader(FileFactory.Open(file));
         }
 
         public void Dispose()
@@ -27,7 +27,7 @@ namespace geheb.smart_backup.io
         {
             string line;
             _items.Clear();
-            while (_items.Count < count && (line = await _reader.ReadLineAsync().ConfigureAwait(false)) != null)
+            while (count > 0 && _items.Count < count && (line = await _reader.ReadLineAsync().ConfigureAwait(false)) != null)
             {
                 _items.Add(line);
             }
