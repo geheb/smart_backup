@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace geheb.smart_backup.core
 {
-    sealed class CompressCli
+    internal sealed class CompressCli
     {
         readonly InlineIfExpressionParser _compressArgsParser;
         readonly string _password;
@@ -23,7 +23,7 @@ namespace geheb.smart_backup.core
             _compressArgsParser = InlineIfExpressionParser.Parse(_appSettings.CompressArguments);
         }
 
-        public bool Compress(FileInfo targetFile, FileInfo sourceFile)
+        public bool Compress(FileInfo sourceFile, FileInfo targetFile)
         {
             string args = _compressArgsParser != null ?
                 _compressArgsParser.Calc("sourcefilelength", sourceFile.Length) :

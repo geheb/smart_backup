@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace geheb.smart_backup.core
 {
-    sealed class AppSettings
+    internal sealed class AppSettings
     {
         public string CompressApp { get; set; }
         public string CompressFileExtension { get; set; }

@@ -220,7 +220,7 @@ namespace geheb.smart_backup.core
                 {
                     _logger.Trace($"Compress file: {sourceFileInfo.FullName} -> {backupFileInfo.FullName}");
 
-                    if (_compressCli.Compress(backupFileInfo, sourceFileInfo))
+                    if (_compressCli.Compress(sourceFileInfo, backupFileInfo))
                     {
                         using (var sigFileCreator = new SigFileCreator(_currentBackupDirectory, _cancel))
                         {
