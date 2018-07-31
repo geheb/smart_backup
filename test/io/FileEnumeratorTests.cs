@@ -108,7 +108,7 @@ namespace geheb.smart_backup.test.io
             }
         }
 
-        [Fact]
+        [Fact(Skip = "can be run without admin privileges only")]
         public void Take_UnauthorizedAccess_ExpectsEmpty()
         {
             var windowsTempDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Temp");
