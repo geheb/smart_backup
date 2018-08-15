@@ -25,9 +25,11 @@ namespace geheb.smart_backup
 
                 try
                 {
-                    var task = new Program().Main(args, cancel.Token);
-                    task.Wait();
-                    return (int)task.Result;
+                    var program = new Program();
+                    return (int)program.Main(args, cancel.Token)
+                        .ConfigureAwait(false)
+                        .GetAwaiter()
+                        .GetResult();
                 }
                 catch (AggregateException ex)
                 {
