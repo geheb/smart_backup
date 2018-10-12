@@ -47,6 +47,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="core\CompressCliTests.cs" />
+    <Compile Include="core\FileExceptionHandlerTests.cs" />
     <Compile Include="io\BatchFileReaderTests.cs" />
     <Compile Include="io\FileEnumeratorTests.cs" />
     <Compile Include="io\FileExtensionsTests.cs" />

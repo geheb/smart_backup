@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,12 +18,13 @@ namespace geheb.smart_backup.core
         static readonly Logger _logger = LogManager.GetCurrentClassLogger();
 
         readonly HashGenerator _hashGenerator = new HashGenerator();
+        readonly FileExceptionHandler _fileExceptionHandler = new FileExceptionHandler();
         readonly BackupArgs _backupArgs;
         readonly AppSettings _appSettings;
         readonly CancellationToken _cancel;
         readonly CompressCli _compressCli;
-        readonly IDictionary<string, byte> _currentBackupDirectoryStructure = new SortedDictionary<string, byte>(
-            new DescendedStringComparer(StringComparison.OrdinalIgnoreCase));
+        readonly IDictionary<string, byte> _currentBackupDirectoryStructure = 
+            new SortedDictionary<string, byte>(new DescendedStringComparer(StringComparison.OrdinalIgnoreCase));
         string _currentBackupDirectory;
         long _filesChecked, _filesProcessed, _filesSkipped;
         string _fullSigFile;
@@ -164,10 +166,7 @@ namespace geheb.smart_backup.core
                             continue;
                         }
 
-                        if (sigFile.IsFileModified)
-                        {
-                            sigFile.Update(sourceFileInfo, ComputeSha256(sourceFileInfo));
-                        }
+                        if (!UpdateHashIfModifed(sigFile, sourceFileInfo)) continue;
 
                         if (!uniqueSigFiles.ContainsKey(sigFile.Sha256))
                         {
@@ -192,6 +191,26 @@ namespace geheb.smart_backup.core
             }
         }
 
+        bool UpdateHashIfModifed(SigFileInfo sigFile, FileInfo sourceFileInfo)
+        {
+            try
+            {
+                if (!sigFile.IsFileModified) return true;
+
+                var hash = ComputeSha256(sourceFileInfo);
+                sigFile.Update(sourceFileInfo, hash);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                if (!_fileExceptionHandler.CanSkip(ex)) throw;
+
+                _logger.Warn($"File access failed: {ex.Message}");
+                Interlocked.Increment(ref _filesSkipped);
+                return false;
+            }
+        }
+
         string ComputeSha256(FileInfo fileInfo)
         {
             _cancel.ThrowIfCancellationRequested();
@@ -208,13 +227,12 @@ namespace geheb.smart_backup.core
         {
             _cancel.ThrowIfCancellationRequested();
             var backupFileInfo = new FileInfo(Path.Combine(_currentBackupDirectory, $"{sigFile.Sha256}.{_appSettings.CompressFileExtension}"));
+            var sourceFileInfo = new FileInfo(sigFile.Path);
             FileInfo sigFileInfo = null;
 
             try
             {
                 var existentSigFiles = FindExistentSigFiles(sigFile);
-
-                var sourceFileInfo = new FileInfo(sigFile.Path);
 
                 if (!existentSigFiles.Any())
                 {
@@ -231,8 +249,8 @@ namespace geheb.smart_backup.core
                     }
                     else
                     {
-                        _logger.Error($"Compress file failed: {sourceFileInfo.FullName}");
                         Interlocked.Increment(ref _filesSkipped);
+                        _logger.Error($"Compress file failed: {sourceFileInfo.FullName}");
                     }
                 }
                 else
@@ -241,11 +259,15 @@ namespace geheb.smart_backup.core
                         .ConfigureAwait(false);
                 }
             }
-            catch
+            catch (Exception ex)
             {
                 sigFileInfo?.DeleteIfExists();
                 backupFileInfo.DeleteIfExists();
-                throw;
+
+                if (!_fileExceptionHandler.CanSkip(ex)) throw;
+
+                _logger.Warn($"File access failed: {ex.Message}");
+                Interlocked.Increment(ref _filesSkipped);
             }
         }
 

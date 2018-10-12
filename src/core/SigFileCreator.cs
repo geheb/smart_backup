@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,6 +19,7 @@ namespace geheb.smart_backup.core
         public static readonly string FileExtension = ".sig";
 
         readonly HashGenerator _hashGenerator = new HashGenerator();
+        readonly FileExceptionHandler _fileExceptionHandler = new FileExceptionHandler();
         readonly string _currentBackupDirectory;
         readonly CancellationToken _cancel;
 
@@ -50,9 +52,13 @@ namespace geheb.smart_backup.core
                     sha256Set.Clear();
 
                     Parallel.ForEach(items, options, fi => sha256Set.Add(fi, ComputeSha256(fi)));
-
                     foreach (var fileInfoAndSha256 in sha256Set)
                     {
+                        if (string.IsNullOrEmpty(fileInfoAndSha256.Value)) // skip files with access error
+                        {
+                            continue;
+                        }
+
                         filesChecked++;
                         File.AppendAllText(filePath,
                             new SigFileInfo(fileInfoAndSha256.Key, fileInfoAndSha256.Value).Serialize());
@@ -101,12 +107,21 @@ namespace geheb.smart_backup.core
         {
             _cancel.ThrowIfCancellationRequested();
 
-            _logger.Trace($"Compute SHA256: {fileInfo.FullName}");
-            var hash = _hashGenerator.Compute(fileInfo.FullName);
+            try
+            {
+                _logger.Trace($"Compute SHA256: {fileInfo.FullName}");
+                var hash = _hashGenerator.Compute(fileInfo.FullName);
 
-            _logger.Trace($"{fileInfo.FullName} = {hash}");
+                _logger.Trace($"{fileInfo.FullName} = {hash}");
 
-            return hash;
+                return hash;
+            }
+            catch (Exception ex)
+            {
+                if (!_fileExceptionHandler.CanSkip(ex)) throw;
+                _logger.Warn($"File access failed: {ex.Message}");
+                return null;
+            }
         }
     }
 }

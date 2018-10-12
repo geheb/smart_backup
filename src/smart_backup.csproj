@@ -66,6 +66,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="core\BackupCreator.cs" />
+    <Compile Include="core\FileExceptionHandler.cs" />
     <Compile Include="core\SigFileCreator.cs" />
     <Compile Include="core\CompressCli.cs" />
     <Compile Include="cli\BackupArgs.cs" />
