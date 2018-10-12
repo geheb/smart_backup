@@ -10,8 +10,8 @@ namespace geheb.smart_backup.io
 {
     internal sealed class BatchFileReader : IDisposable
     {
-        readonly TextReader _reader;
-        readonly List<string> _items = new List<string>();
+        private readonly TextReader _reader;
+        private readonly List<string> _items = new List<string>();
 
         public BatchFileReader(string file)
         {

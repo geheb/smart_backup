@@ -107,19 +107,5 @@ namespace geheb.smart_backup.test.io
                 Assert.Equal("foo", item.Name);
             }
         }
-
-        [Fact(Skip = "can be run without admin privileges only")]
-        public void Take_UnauthorizedAccess_ExpectsEmpty()
-        {
-            var windowsTempDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Temp");
-
-            using (var enumerator = new FileEnumerator(new[] { windowsTempDirectory },
-                null, CancellationToken.None))
-            {
-                var items = enumerator.Take(1);
-
-                Assert.Empty(items);
-            }
-        }
     }
 }

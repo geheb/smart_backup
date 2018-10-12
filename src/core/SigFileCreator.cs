@@ -6,27 +6,22 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace geheb.smart_backup.core
 {
     sealed class SigFileCreator : IDisposable
     {
-        static readonly Logger _logger = LogManager.GetCurrentClassLogger();
         public static readonly string FileExtension = ".sig";
+        private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
-        readonly HashGenerator _hashGenerator = new HashGenerator();
-        readonly FileExceptionHandler _fileExceptionHandler = new FileExceptionHandler();
-        readonly string _currentBackupDirectory;
-        readonly CancellationToken _cancel;
+        private readonly HashGenerator _hashGenerator = new HashGenerator();
+        private readonly FileExceptionHandler _fileExceptionHandler = new FileExceptionHandler();
+        private readonly IShutdownHandler _shutdownHandler;
 
-        public SigFileCreator(string currentBackupDirectory, CancellationToken cancel)
+        public SigFileCreator(IShutdownHandler shutdownHandler)
         {
-            _currentBackupDirectory = currentBackupDirectory;
-            _cancel = cancel;
+            _shutdownHandler = shutdownHandler;
         }
 
         public void Dispose()
@@ -34,17 +29,17 @@ namespace geheb.smart_backup.core
             _hashGenerator.Dispose();
         }
 
-        public (string filePath, long filesChecked) CreateFull(BackupArgs backupArgs)
+        public SigFileResult CreateFull(BackupArgs backupArgs, string currentBackupDirectory)
         {
-            var filePath = Path.Combine(_currentBackupDirectory, "backup" + FileExtension);
+            var filePath = Path.Combine(currentBackupDirectory, "backup" + FileExtension);
             var filesChecked = 0L;
 
             _logger.Trace($"Create backup file: {filePath}");
 
-            using (var fileEnumerator = new FileEnumerator(backupArgs.File, backupArgs.IgnoreRegexPattern, _cancel))
+            using (var fileEnumerator = new FileEnumerator(backupArgs.File, backupArgs.IgnoreRegexPattern, _shutdownHandler.Token))
             {
                 IEnumerable<FileInfo> items;
-                var options = new ParallelOptions { CancellationToken = _cancel };
+                var options = new ParallelOptions { CancellationToken = _shutdownHandler.Token };
                 var sha256Set = new Dictionary<FileInfo, string>();
 
                 while ((items = fileEnumerator.Take(Environment.ProcessorCount)).Any())
@@ -61,7 +56,7 @@ namespace geheb.smart_backup.core
 
                         filesChecked++;
                         File.AppendAllText(filePath,
-                            new SigFileInfo(fileInfoAndSha256.Key, fileInfoAndSha256.Value).Serialize());
+                            SigFileInfo.FromFileInfo(fileInfoAndSha256.Key, fileInfoAndSha256.Value).Serialize());
                     }
                 }
             }
@@ -72,19 +67,19 @@ namespace geheb.smart_backup.core
                 File.WriteAllText(filePath, string.Empty);
             }
 
-            return (filePath, filesChecked);
+            return new SigFileResult(filePath, filesChecked);
         }
 
-        public async Task<FileInfo> Create(SigFileInfo metaInfo)
+        public async Task<FileInfo> Create(SigFileInfo metaInfo, string currentBackupDirectory)
         {
-            var sigFileInfo = new FileInfo(Path.Combine(_currentBackupDirectory, metaInfo.Sha256 + FileExtension));
+            var sigFileInfo = new FileInfo(Path.Combine(currentBackupDirectory, metaInfo.Sha256 + FileExtension));
             var sigFileTempInfo = new FileInfo(sigFileInfo.FullName + ".temp");
 
             try
             {
                 if (sigFileInfo.Exists)
                 {
-                    await sigFileInfo.Copy(sigFileTempInfo.FullName, _cancel).ConfigureAwait(false);
+                    await sigFileInfo.Copy(sigFileTempInfo.FullName, _shutdownHandler.Token).ConfigureAwait(false);
                 }
 
                 using (var writer = new StreamWriter(FileFactory.Append(sigFileTempInfo.FullName)))
@@ -103,9 +98,9 @@ namespace geheb.smart_backup.core
             return sigFileInfo;
         }
 
-        string ComputeSha256(FileInfo fileInfo)
+        private string ComputeSha256(FileInfo fileInfo)
         {
-            _cancel.ThrowIfCancellationRequested();
+            _shutdownHandler.Token.ThrowIfCancellationRequested();
 
             try
             {

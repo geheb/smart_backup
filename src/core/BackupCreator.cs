@@ -7,34 +7,33 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace geheb.smart_backup.core
 {
-    sealed class BackupCreator : IDisposable
+    internal sealed class BackupCreator : IDisposable
     {
-        static readonly Logger _logger = LogManager.GetCurrentClassLogger();
+        private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
-        readonly HashGenerator _hashGenerator = new HashGenerator();
-        readonly FileExceptionHandler _fileExceptionHandler = new FileExceptionHandler();
-        readonly BackupArgs _backupArgs;
-        readonly AppSettings _appSettings;
-        readonly CancellationToken _cancel;
-        readonly CompressCli _compressCli;
-        readonly IDictionary<string, byte> _currentBackupDirectoryStructure = 
+        private readonly HashGenerator _hashGenerator = new HashGenerator();
+        private readonly FileExceptionHandler _fileExceptionHandler = new FileExceptionHandler();
+        private readonly BackupArgs _backupArgs;
+        private readonly AppSettings _appSettings;
+        private readonly IShutdownHandler _shutdownHandler;
+        private readonly CompressCli _compressCli;
+        private readonly IDictionary<string, byte> _currentBackupDirectoryStructure = 
             new SortedDictionary<string, byte>(new DescendedStringComparer(StringComparison.OrdinalIgnoreCase));
-        string _currentBackupDirectory;
-        long _filesChecked, _filesProcessed, _filesSkipped;
-        string _fullSigFile;
+        private string _currentBackupDirectory;
+        private long _filesProcessed, _filesSkipped;
+        private SigFileResult _sigFileResult;
 
-        public BackupCreator(AppSettings appSettings, CancellationToken cancel, BackupArgs args)
+        public BackupCreator(AppSettings appSettings, IShutdownHandler shutdownHandler, BackupArgs args)
         {
             _appSettings = appSettings;
-            _cancel = cancel;
+            _shutdownHandler = shutdownHandler;
             _backupArgs = args;
-            _compressCli = new CompressCli(appSettings, args.Password, cancel);
+            _compressCli = new CompressCli(appSettings, shutdownHandler);
         }
 
         public void Dispose()
@@ -50,7 +49,7 @@ namespace geheb.smart_backup.core
 
             await BackupFiles().ConfigureAwait(false);
 
-            _logger.Info($"Files checked: {_filesChecked}, files processed: {_filesProcessed}, files skipped: {_filesSkipped}");
+            _logger.Info($"Files checked: {_sigFileResult.FilesChecked}, files processed: {_filesProcessed}, files skipped: {_filesSkipped}");
 
             CleanupBackupDirectory();
         }
@@ -135,16 +134,16 @@ namespace geheb.smart_backup.core
             _logger.Trace($"Create backup directory: {_currentBackupDirectory}");
             Directory.CreateDirectory(_currentBackupDirectory);
 
-            using (var sigFileCreator = new SigFileCreator(_currentBackupDirectory, _cancel))
+            using (var sigFileCreator = new SigFileCreator(_shutdownHandler))
             {
-                (_fullSigFile, _filesChecked) = sigFileCreator.CreateFull(_backupArgs);
-                return _filesChecked > 0;
+                _sigFileResult = sigFileCreator.CreateFull(_backupArgs, _currentBackupDirectory);
+                return _sigFileResult.FilesChecked > 0;
             }
         }
 
         async Task BackupFiles()
         {
-            using (var reader = new BatchFileReader(_fullSigFile))
+            using (var reader = new BatchFileReader(_sigFileResult.FilePath))
             {
                 IEnumerable<string> items;
                 var duplicateSigFiles = new List<SigFileInfo>();
@@ -213,7 +212,7 @@ namespace geheb.smart_backup.core
 
         string ComputeSha256(FileInfo fileInfo)
         {
-            _cancel.ThrowIfCancellationRequested();
+            _shutdownHandler.Token.ThrowIfCancellationRequested();
 
             _logger.Trace($"Compute SHA256: {fileInfo.FullName}");
             var hash = _hashGenerator.Compute(fileInfo.FullName);
@@ -225,7 +224,7 @@ namespace geheb.smart_backup.core
 
         async Task BackupFile(SigFileInfo sigFile)
         {
-            _cancel.ThrowIfCancellationRequested();
+            _shutdownHandler.Token.ThrowIfCancellationRequested();
             var backupFileInfo = new FileInfo(Path.Combine(_currentBackupDirectory, $"{sigFile.Sha256}.{_appSettings.CompressFileExtension}"));
             var sourceFileInfo = new FileInfo(sigFile.Path);
             FileInfo sigFileInfo = null;
@@ -238,11 +237,11 @@ namespace geheb.smart_backup.core
                 {
                     _logger.Trace($"Compress file: {sourceFileInfo.FullName} -> {backupFileInfo.FullName}");
 
-                    if (_compressCli.Compress(sourceFileInfo, backupFileInfo))
+                    if (_compressCli.Compress(sourceFileInfo, backupFileInfo, _backupArgs.Password))
                     {
-                        using (var sigFileCreator = new SigFileCreator(_currentBackupDirectory, _cancel))
+                        using (var sigFileCreator = new SigFileCreator(_shutdownHandler))
                         {
-                            sigFileInfo = await sigFileCreator.Create(sigFile).ConfigureAwait(false);
+                            sigFileInfo = await sigFileCreator.Create(sigFile, _currentBackupDirectory).ConfigureAwait(false);
                         }
 
                         Interlocked.Increment(ref _filesProcessed);
@@ -291,12 +290,12 @@ namespace geheb.smart_backup.core
                 !backupFileInfo.Exists)
             {
                 _logger.Trace($"Backup exists but missing signature, copy file: {sourceFilePath} -> {backupFileInfo.FullName}");
-                await existentBackupFile.Copy(backupFileInfo.FullName, _cancel).ConfigureAwait(false);
+                await existentBackupFile.Copy(backupFileInfo.FullName, _shutdownHandler.Token).ConfigureAwait(false);
             }
 
-            using (var sigFileCreator = new SigFileCreator(_currentBackupDirectory, _cancel))
+            using (var sigFileCreator = new SigFileCreator(_shutdownHandler))
             {
-                await sigFileCreator.Create(sigFile).ConfigureAwait(false);
+                await sigFileCreator.Create(sigFile, _currentBackupDirectory).ConfigureAwait(false);
             }
 
             Interlocked.Increment(ref _filesProcessed);

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+﻿using System.Text.RegularExpressions;
 
 namespace geheb.smart_backup.text
 {
@@ -13,28 +8,14 @@ namespace geheb.smart_backup.text
     /// </summary>
     internal sealed class InlineIfExpressionParser
     {
-        readonly string _originalArgs;
-        readonly int _index;
-        readonly int _length;
-        readonly string _conditionVar;
-        readonly string _equality;
-        readonly long _conditionValue;
-        readonly string _then;
-        readonly string _else;
-
-        private InlineIfExpressionParser(string args, MatchCollection matches)
-        {
-            _originalArgs = args;
-
-            _index = matches[0].Index;
-            _length = matches[0].Length;
-
-            _conditionVar = matches[0].Groups[1].Value;
-            _equality = matches[0].Groups[2].Value;
-            _conditionValue = long.Parse(matches[0].Groups[3].Value);
-            _then = matches[0].Groups[4].Value;
-            _else = matches[0].Groups[5].Value;
-        }
+        private readonly string _originalArgs;
+        private readonly int _index;
+        private readonly int _length;
+        private readonly string _conditionVar;
+        private readonly string _equality;
+        private readonly long _conditionValue;
+        private readonly string _then;
+        private readonly string _else;
 
         public static InlineIfExpressionParser Parse(string input)
         {
@@ -62,5 +43,18 @@ namespace geheb.smart_backup.text
             return _originalArgs.Substring(0, _index) + param + _originalArgs.Substring(_index + _length);
         }
 
+        private InlineIfExpressionParser(string args, MatchCollection matches)
+        {
+            _originalArgs = args;
+
+            _index = matches[0].Index;
+            _length = matches[0].Length;
+
+            _conditionVar = matches[0].Groups[1].Value;
+            _equality = matches[0].Groups[2].Value;
+            _conditionValue = long.Parse(matches[0].Groups[3].Value);
+            _then = matches[0].Groups[4].Value;
+            _else = matches[0].Groups[5].Value;
+        }
     }
 }

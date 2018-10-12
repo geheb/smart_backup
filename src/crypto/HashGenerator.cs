@@ -1,14 +1,14 @@
 ﻿using System;
 using System.IO;
 using System.Security.Cryptography;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace geheb.smart_backup.crypto
 {
     internal sealed class HashGenerator : IDisposable
     {
-        readonly HashAlgorithm _hash = SHA256.Create();
+        private const string EmptyFileHash = "0000000000000000000000000000000000000000000000000000000000000000";
+
+        private readonly HashAlgorithm _hash = SHA256.Create();
 
         public void Dispose()
         {
@@ -19,7 +19,7 @@ namespace geheb.smart_backup.crypto
         {
             var fi = new FileInfo(file);
             if (fi.Length < 1)
-                return "0000000000000000000000000000000000000000000000000000000000000000";
+                return EmptyFileHash;
 
             using (var bf = new BufferedStream(fi.OpenRead(), 1024 * 1024))
             {

@@ -1,13 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace geheb.smart_backup.cli
 {
-    sealed class BackupArgs
+    internal sealed class BackupArgs
     {
         public List<string> File { get; set; }
 

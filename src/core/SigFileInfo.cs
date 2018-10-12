@@ -1,15 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace geheb.smart_backup.core
 {
-    sealed class SigFileInfo
+    internal sealed class SigFileInfo
     {
-        const char Separator = '\t';
+        private const char Separator = '\t';
+
         public string Path { get; private set; }
         public long Length { get; private set; }
         public DateTime CreationTimeUtc { get; private set; }
@@ -26,28 +23,9 @@ namespace geheb.smart_backup.core
             }
         }
 
-        public SigFileInfo(FileInfo fi, string sha256)
+        public static SigFileInfo FromFileInfo(FileInfo fi, string sha256)
         {
-            Path = fi.FullName;
-            Length = fi.Length;
-            CreationTimeUtc = fi.CreationTimeUtc;
-            Sha256 = sha256;
-        }
-
-        public void Update(FileInfo fi, string sha256)
-        {
-            Path = fi.FullName;
-            Length = fi.Length;
-            CreationTimeUtc = fi.CreationTimeUtc;
-            Sha256 = sha256;
-        }
-
-        private SigFileInfo(string path, long length, DateTime time, string sha256)
-        {
-            Path = path;
-            Length = length;
-            CreationTimeUtc = time;
-            Sha256 = sha256;
+            return new SigFileInfo(fi, sha256);
         }
 
         public static SigFileInfo Parse(string line)
@@ -69,6 +47,14 @@ namespace geheb.smart_backup.core
             return new SigFileInfo(items[0], length, time, items[3]);
         }
 
+        public void Update(FileInfo fi, string sha256)
+        {
+            Path = fi.FullName;
+            Length = fi.Length;
+            CreationTimeUtc = fi.CreationTimeUtc;
+            Sha256 = sha256;
+        }
+
         public string Serialize()
         {
             return 
@@ -81,6 +67,22 @@ namespace geheb.smart_backup.core
         public override string ToString()
         {
             return Path;
+        }
+
+        private SigFileInfo(string path, long length, DateTime time, string sha256)
+        {
+            Path = path;
+            Length = length;
+            CreationTimeUtc = time;
+            Sha256 = sha256;
+        }
+
+        private SigFileInfo(FileInfo fi, string sha256)
+        {
+            Path = fi.FullName;
+            Length = fi.Length;
+            CreationTimeUtc = fi.CreationTimeUtc;
+            Sha256 = sha256;
         }
     }
 }

@@ -1,55 +1,51 @@
 ﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
-using System.Configuration;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace geheb.smart_backup.core
 {
     internal sealed class AppSettings
     {
+        private const string FileName = "appSettings.json";
+
         public string CompressApp { get; set; }
         public string CompressFileExtension { get; set; }
         public string CompressArguments { get; set; }
 
-        public bool Validate()
+        public bool Validate(TextWriter errorWriter)
         {
             if (string.IsNullOrEmpty(CompressApp))
             {
-                Console.Error.WriteLine("missing compression app in appSettings.json");
+                errorWriter.WriteLine($"missing compression app in {FileName}");
                 return false;
             }
 
             if (!File.Exists(CompressApp))
             {
-                Console.Error.WriteLine($"compression app not found: {CompressApp}");
+                errorWriter.WriteLine($"compression app not found: {CompressApp}");
                 return false;
             }
 
             if (string.IsNullOrEmpty(CompressFileExtension))
             {
-                Console.Error.WriteLine("missing compression file extension in appSettings.json");
+                errorWriter.WriteLine($"missing compression file extension in {FileName}");
                 return false;
             }
 
             if (string.IsNullOrEmpty(CompressArguments))
             {
-                Console.Error.WriteLine("missing compression arguments in appSettings.json");
+                errorWriter.WriteLine($"missing compression arguments in {FileName}");
             }
 
             return true;
         }
 
-        public static AppSettings Load()
+        public static AppSettings Load(TextWriter errorWriter)
         {
-            var fi = new FileInfo(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appSettings.json"));
+            var fi = new FileInfo(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, FileName));
             if (!fi.Exists)
             {
-                Console.Error.WriteLine("missing file appSettings.json");
+                errorWriter.WriteLine($"file not found: {FileName}");
                 return null;
             }
 

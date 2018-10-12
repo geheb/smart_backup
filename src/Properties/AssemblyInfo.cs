@@ -36,3 +36,4 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyFileVersion("1.0.0.0")]
 
 [assembly: InternalsVisibleTo("smart_backup_test")]
+[assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")] // required for Moq

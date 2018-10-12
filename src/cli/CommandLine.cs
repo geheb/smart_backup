@@ -1,19 +1,17 @@
 ﻿using Fclp;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace geheb.smart_backup.cli
 {
-    sealed class CommandLine
+    internal sealed class CommandLine
     {
-        readonly string _app;
-        readonly Version _fileVersion;
-        readonly FileVersionInfo _fileInfo;
+        private readonly string _app;
+        private readonly Version _fileVersion;
+        private readonly FileVersionInfo _fileInfo;
+
         public BackupArgs Backup { get; private set; }
 
         public CommandLine()
@@ -22,24 +20,6 @@ namespace geheb.smart_backup.cli
             _app = asm.GetName().Name;
             _fileVersion = asm.GetName().Version;
             _fileInfo = FileVersionInfo.GetVersionInfo(asm.Location);
-        }
-
-        void PrintHeader()
-        {
-            Console.WriteLine($"{_app} v{_fileVersion}");
-            Console.WriteLine(_fileInfo.LegalCopyright);
-            Console.WriteLine();
-        }
-
-        void PrintBaseHelp()
-        {
-            Console.WriteLine($"Usage: {_app} [--help] [--version] <command> [<args>]");
-            Console.WriteLine();
-            Console.WriteLine("These are common commands used in various situations:");
-            Console.WriteLine("   backup       backup files and folders into specified directory");
-            Console.WriteLine("   find         find backed up file");
-            Console.WriteLine();
-            Console.WriteLine($"See also {_app} <command> --help");
         }
 
         public bool Parse(string[] args)
@@ -102,6 +82,24 @@ namespace geheb.smart_backup.cli
 
             Backup = parser.Object;
             return true;
+        }
+
+        private void PrintHeader()
+        {
+            Console.WriteLine($"{_app} v{_fileVersion}");
+            Console.WriteLine(_fileInfo.LegalCopyright);
+            Console.WriteLine();
+        }
+
+        private void PrintBaseHelp()
+        {
+            Console.WriteLine($"Usage: {_app} [--help] [--version] <command> [<args>]");
+            Console.WriteLine();
+            Console.WriteLine("These are common commands used in various situations:");
+            Console.WriteLine("   backup       backup files and folders into specified directory");
+            Console.WriteLine("   find         find backed up file");
+            Console.WriteLine();
+            Console.WriteLine($"See also {_app} <command> --help");
         }
     }
 }

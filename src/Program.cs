@@ -3,30 +3,22 @@ using geheb.smart_backup.core;
 using NLog;
 using System;
 using System.Diagnostics;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace geheb.smart_backup
 {
-    sealed class Program
+    internal sealed class Program
     {
-        static readonly Logger _logger = LogManager.GetCurrentClassLogger();
-        enum ExitCode { Success, Cancelled, ArgumentError, InternalError, NotImplemented, InvalidAppSettings };
+        private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
         static int Main(string[] args)
         {
-            using (var cancel = new CancellationTokenSource())
+            using (var shutdownHandler = new ShutdownHandler())
             {
-                Console.CancelKeyPress += (s, e) =>
-                {
-                    e.Cancel = true;
-                    cancel.Cancel();
-                };
-
                 try
                 {
                     var program = new Program();
-                    return (int)program.Main(args, cancel.Token)
+                    return (int)program.Main(args, shutdownHandler)
                         .ConfigureAwait(false)
                         .GetAwaiter()
                         .GetResult();
@@ -56,10 +48,10 @@ namespace geheb.smart_backup
             }
         }
 
-        async Task<ExitCode> Main(string[] args, CancellationToken cancel)
+        async Task<ExitCode> Main(string[] args, IShutdownHandler shutdownHandler)
         {
-            var appSettings = AppSettings.Load();
-            if (appSettings == null || !appSettings.Validate())
+            var appSettings = AppSettings.Load(Console.Error);
+            if (appSettings == null || !appSettings.Validate(Console.Error))
             {
                 return ExitCode.InvalidAppSettings;
             }
@@ -75,7 +67,7 @@ namespace geheb.smart_backup
                 var startTime = Stopwatch.StartNew();
                 try
                 {
-                    using (var backup = new BackupCreator(appSettings, cancel, cli.Backup))
+                    using (var backup = new BackupCreator(appSettings, shutdownHandler, cli.Backup))
                     {
                         await backup.Create().ConfigureAwait(false);
                     }

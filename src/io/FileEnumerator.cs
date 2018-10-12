@@ -3,20 +3,18 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace geheb.smart_backup.io
 {
     internal sealed class FileEnumerator : IDisposable
     {
-        static readonly Logger _logger = LogManager.GetCurrentClassLogger();
+        private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
-        readonly List<FileInfo> _currentFiles = new List<FileInfo>();
-        readonly IEnumerator<FileInfo> _currentFileEnumerator;
-        readonly List<Regex> _ignorePatterns = new List<Regex>();
+        private readonly List<FileInfo> _currentFiles = new List<FileInfo>();
+        private readonly IEnumerator<FileInfo> _currentFileEnumerator;
+        private readonly List<Regex> _ignorePatterns = new List<Regex>();
 
         public FileEnumerator(IEnumerable<string> path, IEnumerable<string> ignorePattern, CancellationToken cancel)
         {
@@ -51,7 +49,7 @@ namespace geheb.smart_backup.io
             return _ignorePatterns.Any(regex => regex.IsMatch(fi.FullName));
         }
 
-        IEnumerator<FileInfo> Enumerate(IEnumerable<string> path, CancellationToken cancel)
+        private IEnumerator<FileInfo> Enumerate(IEnumerable<string> path, CancellationToken cancel)
         {
             foreach (string p in path)
             {
@@ -82,7 +80,7 @@ namespace geheb.smart_backup.io
             }
         }
 
-        IEnumerable<FileInfo> EnumerateAllFiles(DirectoryInfo directoryInfo)
+        private IEnumerable<FileInfo> EnumerateAllFiles(DirectoryInfo directoryInfo)
         {
             IEnumerable<FileInfo> files = null;
             try

@@ -49,7 +49,7 @@
     <PackageReference Include="Newtonsoft.Json">
       <Version>11.0.2</Version>
     </PackageReference>
-    <PackageReference Include="NLog" Version="4.5.7" />
+    <PackageReference Include="NLog" Version="4.5.10" />
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
@@ -67,11 +67,15 @@
   <ItemGroup>
     <Compile Include="core\BackupCreator.cs" />
     <Compile Include="core\FileExceptionHandler.cs" />
+    <Compile Include="core\IShutdownHandler.cs" />
+    <Compile Include="core\ShutdownHandler.cs" />
     <Compile Include="core\SigFileCreator.cs" />
     <Compile Include="core\CompressCli.cs" />
     <Compile Include="cli\BackupArgs.cs" />
     <Compile Include="cli\CommandLine.cs" />
     <Compile Include="core\AppSettings.cs" />
+    <Compile Include="core\SigFileResult.cs" />
+    <Compile Include="ExitCode.cs" />
     <Compile Include="io\FileEnumerator.cs" />
     <Compile Include="io\FileExtensions.cs" />
     <Compile Include="io\FileFactory.cs" />
