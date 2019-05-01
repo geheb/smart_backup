@@ -39,7 +39,7 @@ Task("release")
 	var files = GetFiles(buildConfigDirectory.ToString() + "/**/*")
 		.Where(f => !ignoredExt.Contains(f.GetExtension().ToLowerInvariant()));
 		
-	Zip(buildConfigDirectory, buildDir.ToString() + "/release.zip", files);
+	Zip(buildConfigDirectory, buildDir.ToString() + "/smart_backup.zip", files);
 });
 
 Task("build")

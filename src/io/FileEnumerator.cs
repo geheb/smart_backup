@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security;
 using System.Text.RegularExpressions;
 using System.Threading;
 
@@ -80,20 +81,9 @@ namespace geheb.smart_backup.io
             }
         }
 
-        private IEnumerable<FileInfo> EnumerateAllFiles(DirectoryInfo directoryInfo)
+        private IEnumerable<T> EnumerateAccessible<T>(IEnumerable<T> source)
         {
-            IEnumerable<FileInfo> files = null;
-            try
-            {
-                files = directoryInfo.EnumerateFiles("*", SearchOption.AllDirectories);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                _logger.Warn(ex);
-                yield break;
-            }
-
-            using (var enumerator = files.GetEnumerator())
+            using (var enumerator = source.GetEnumerator())
             {
                 bool? hasCurrent;
                 do
@@ -103,17 +93,58 @@ namespace geheb.smart_backup.io
                     {
                         hasCurrent = enumerator.MoveNext();
                     }
+                    catch (SecurityException ex)
+                    {
+                        _logger.Warn(ex.Message);
+                    }
                     catch (UnauthorizedAccessException ex)
                     {
-                        _logger.Warn(ex);
+                        _logger.Warn(ex.Message);
                     }
 
-                    if (hasCurrent ?? false)
+                    if (hasCurrent.HasValue && hasCurrent.Value)
                     {
                         yield return enumerator.Current;
                     }
+                }
+                while (!hasCurrent.HasValue || hasCurrent.Value);
+            }
+        }
 
-                } while (hasCurrent ?? true); 
+        private IEnumerable<FileInfo> EnumerateAllFiles(DirectoryInfo startDirInfo)
+        {
+            var dirQueue = new Queue<DirectoryInfo>();
+            dirQueue.Enqueue(startDirInfo);
+
+            while (dirQueue.Count > 0)
+            {
+                var currentDirInfo = dirQueue.Dequeue();
+
+                IEnumerable<FileInfo> fileEnumerable = null;
+                try
+                {
+                    fileEnumerable = currentDirInfo.EnumerateFiles();
+                }
+                catch (SecurityException ex)
+                {
+                    _logger.Warn(ex.Message);
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    _logger.Warn(ex.Message);
+                }
+
+                if (fileEnumerable == null) continue;
+
+                foreach (var fileInfo in EnumerateAccessible(fileEnumerable))
+                {
+                    yield return fileInfo;
+                }
+
+                foreach (var dirInfo in EnumerateAccessible(currentDirInfo.EnumerateDirectories()))
+                {
+                    dirQueue.Enqueue(dirInfo);
+                }
             }
         }
     }
