@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 
 namespace geheb.smart_backup.core
@@ -38,7 +39,7 @@ namespace geheb.smart_backup.core
 
             if (items[0].Length < 2 ||
                 !long.TryParse(items[1], out var length) ||
-                !DateTime.TryParse(items[2], out var time) ||
+                !DateTime.TryParse(items[2], CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var time) ||
                 items[3].Length != 64)
             {
                 throw new InvalidDataException("Invalid sig info: " + line);

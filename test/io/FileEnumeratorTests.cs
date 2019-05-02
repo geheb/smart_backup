@@ -107,5 +107,27 @@ namespace geheb.smart_backup.test.io
                 Assert.Equal("foo", item.Name);
             }
         }
+
+        [Fact]
+        public void Take_NestedDirectoryFiles_ExpectsAll()
+        {
+            var nestedPath = Path.Combine(_tempDirectory2, "nested");
+            Directory.CreateDirectory(Path.Combine(nestedPath, "1", "2", "3", "4", "5"));
+
+            var nextPath = nestedPath;
+            for (int i = 1; i < 6; i++)
+            {
+                nextPath = Path.Combine(nextPath, i.ToString());
+                File.WriteAllText(Path.Combine(nextPath, "file"), string.Empty);
+            }
+
+            using (var enumerator = new FileEnumerator(new[] { nestedPath },
+                null, CancellationToken.None))
+            {
+                var items = enumerator.Take(10);
+
+                Assert.Equal(5, items.Count());
+            }
+        }
     }
 }
