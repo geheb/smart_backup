@@ -24,7 +24,6 @@ bld/
 [Oo]bj/
 [Ll]og/
 tools/
-build.ps1
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/

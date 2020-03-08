@@ -1,91 +1,128 @@
-﻿using geheb.smart_backup.cli;
-using geheb.smart_backup.core;
-using NLog;
-using System;
-using System.Diagnostics;
+﻿using Geheb.SmartBackup.App;
+using Geheb.SmartBackup.Models;
+using McMaster.Extensions.CommandLineUtils;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Serilog;
+using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
-namespace geheb.smart_backup
+namespace Geheb.SmartBackup
 {
-    internal sealed class Program
+    class Program
     {
-        private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
+        private const string _appsettingsFile = "appsettings.json";
+        private const string _hostsettingsFile = "hostsettings.json";
+        private const string _environmentPrefix = "SMARTBACKUP_";
 
-        static int Main(string[] args)
+        static async Task<int> Main(string[] args)
         {
-            using (var shutdownHandler = new ShutdownHandler())
+            var app = new CommandLineApplication
             {
-                try
+                Name = "SmartBackup",
+                Description = "A simple and secure backup tool"
+            };
+
+            app.HelpOption(inherited: true);
+
+            app.Command("backup", backupCmd =>
+            {
+                backupCmd.Description = "Create a backup of specified directory";
+
+                var sourceDirOption = backupCmd
+                    .Option("-s|--source-dir <PATH>", "Source directory to create backup", CommandOptionType.MultipleValue)
+                    .IsRequired()
+                    .Accepts(v => v.ExistingDirectory());
+
+                var targetDirOption = backupCmd
+                    .Option("-t|--target-dir <PATH>", "Target directory to put backup", CommandOptionType.SingleValue)
+                    .IsRequired()
+                    .Accepts(v => v.LegalFilePath());
+
+                var passwordOption = backupCmd
+                    .Option("-p|--password <PASSWORD>", "Password to encrypt backup files", CommandOptionType.SingleValue);
+
+                var maxBackupSetsOption = backupCmd
+                    .Option<int>("-m|--max-backup <COUNT>", "Keep max backup sets and delete the oldest ones", CommandOptionType.SingleValue)
+                    .Accepts(v => v.Range(0, 1000));
+
+                backupCmd.OnExecuteAsync((cancellationToken) =>
                 {
-                    var program = new Program();
-                    return (int)program.Main(args, shutdownHandler)
-                        .ConfigureAwait(false)
-                        .GetAwaiter()
-                        .GetResult();
-                }
-                catch (AggregateException ex)
-                {
-                    try
-                    {
-                        ex.Handle(e => e is OperationCanceledException);
-                        return (int)ExitCode.Cancelled;
-                    }
-                    catch (Exception ex2)
-                    {
-                        _logger.Error(ex2);
-                        return (int)ExitCode.InternalError;
-                    }
-                }
-                finally
-                {
-                    if (Environment.UserInteractive)
-                    {
-                        Console.WriteLine();
-                        Console.WriteLine("Press any key to exit.");
-                        Console.ReadKey();
-                    }
-                }
+                    var param = new BackupParam(sourceDirOption.Values, targetDirOption.Value(), passwordOption.Value(), maxBackupSetsOption.ParsedValue);
+                    return RunHostAsync<BackupCommand, BackupParam>(args, param, cancellationToken);
+                });
+            });
+
+            app.VersionOption("-v|--version", typeof(Program).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion);
+
+            app.OnExecute(() =>
+            {
+                app.Error.WriteLine("Specify a subcommand");
+                app.ShowHelp();
+                return 1;
+            });
+
+            try
+            {
+                return await app.ExecuteAsync(args);
+            }
+            catch (CommandParsingException ex)
+            {
+                app.Error.WriteLine(ex.Message);
+                return -1;
             }
         }
 
-        async Task<ExitCode> Main(string[] args, IShutdownHandler shutdownHandler)
+        private static async Task<int> RunHostAsync<TCommand, TParam>(string[] args, TParam param, CancellationToken cancellationToken)
+            where TCommand : class, IAppCommand
+            where TParam : class, IParam
         {
-            var appSettings = AppSettings.Load(Console.Error);
-            if (appSettings == null || !appSettings.Validate(Console.Error))
-            {
-                return ExitCode.InvalidAppSettings;
-            }
-
-            var cli = new CommandLine();
-            if (!cli.Parse(args))
-            {
-                return ExitCode.ArgumentError;
-            }
-
-            if (cli.Backup != null)
-            {
-                var startTime = Stopwatch.StartNew();
-                try
+            var env = new Env();
+            var host = new HostBuilder()
+                .ConfigureHostConfiguration(configHost =>
                 {
-                    using (var backup = new BackupCreator(appSettings, shutdownHandler, cli.Backup))
-                    {
-                        await backup.Create().ConfigureAwait(false);
-                    }
-                    return ExitCode.Success;
-                }
-                catch (OperationCanceledException)
+                    configHost.SetBasePath(env.CurrentProcessDirectory);
+                    configHost.AddJsonFile(_hostsettingsFile, optional: true);
+                    configHost.AddEnvironmentVariables(prefix: _environmentPrefix);
+                    configHost.AddCommandLine(args);
+                })
+                .ConfigureAppConfiguration((hostContext, configApp) =>
                 {
-                    _logger.Warn("Operation canceled");
-                    throw;
-                }
-                finally
+                    configApp.SetBasePath(env.CurrentProcessDirectory);
+                    configApp.AddJsonFile(_appsettingsFile, optional: true);
+                    configApp.AddJsonFile(
+                        $"appsettings.{hostContext.HostingEnvironment.EnvironmentName}.json",
+                        optional: true);
+                    configApp.AddEnvironmentVariables(prefix: _environmentPrefix);
+                    configApp.AddCommandLine(args);
+                })
+                .ConfigureServices((hostContext, services) =>
                 {
-                    startTime.Stop();
-                    _logger.Info($"Elapsed time: {startTime.Elapsed}");
-                }
-            }
+                    services.AddLogging();
+                    services.Configure<Application>(hostContext.Configuration.GetSection("application"));
+                    services.AddHostedService<AppHostedService>();
+                    services.AddSingleton(param);
+                    services.AddSingleton<IAppCommand, TCommand>();
+                    services.AddTransient<SHA256Generator>();
+                    services.AddTransient<RecursiveFileEnumerator>();
+                    services.AddTransient<SevenZipCli>();
+                    services.AddSingleton(env);
+                })
+                .ConfigureLogging((hostContext, configLogging) =>
+                {
+                    Log.Logger = new LoggerConfiguration()
+                      .ReadFrom.Configuration(hostContext.Configuration)
+                      .CreateLogger();
 
-            return ExitCode.NotImplemented;
+                    configLogging.AddSerilog(dispose: true);
+                })
+                .UseConsoleLifetime()
+                .Build();
+
+            await host.RunAsync(cancellationToken);
+            return 0;
         }
     }
 }
