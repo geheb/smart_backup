@@ -1,4 +1,4 @@
-﻿using Geheb.SmartBackup.Models;
+using Geheb.SmartBackup.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
@@ -9,16 +9,12 @@ namespace Geheb.SmartBackup.App
 {
     class AppHostedService : IHostedService, IDisposable
     {
-        private readonly ILogger _logger;
         private readonly IAppCommand _appCommand;
         private Task _executingTask;
         private readonly CancellationTokenSource _stoppingToken = new CancellationTokenSource();
 
-        public AppHostedService(
-            ILogger<AppHostedService> logger,
-            IAppCommand appCommand)
+        public AppHostedService(IAppCommand appCommand)
         {
-            _logger = logger;
             _appCommand = appCommand;
         }
 

@@ -1,10 +1,11 @@
-﻿using Geheb.SmartBackup.App;
+using Geheb.SmartBackup.App;
 using Geheb.SmartBackup.Models;
 using McMaster.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using System.IO.Abstractions;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -108,6 +109,7 @@ namespace Geheb.SmartBackup
                     services.AddTransient<SHA256Generator>();
                     services.AddTransient<RecursiveFileEnumerator>();
                     services.AddTransient<SevenZipCli>();
+                    services.AddTransient<IFileSystem, FileSystem>();
                     services.AddSingleton(env);
                 })
                 .ConfigureLogging((hostContext, configLogging) =>

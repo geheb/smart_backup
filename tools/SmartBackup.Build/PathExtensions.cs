@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.IO;
 
 namespace Geheb.SmartBackup.Build
@@ -9,7 +9,7 @@ namespace Geheb.SmartBackup.Build
         {
             if (!Directory.Exists(directory)) return;
 
-            foreach(var file in Directory.EnumerateFiles(directory))
+            foreach (var file in Directory.EnumerateFiles(directory))
             {
                 File.Delete(file);
             }
@@ -22,7 +22,7 @@ namespace Geheb.SmartBackup.Build
 
         public static string ExpandPath(string path)
         {
-            if(Debugger.IsAttached)
+            if (Debugger.IsAttached)
             {
                 return Path.GetFullPath(Path.Combine("../../../../../", path));
             }
@@ -41,7 +41,7 @@ namespace Geheb.SmartBackup.Build
             foreach (string file in Directory.GetFiles(sourceDir, "*", SearchOption.AllDirectories))
             {
                 var relSourcePath = file.Substring(sourceDir.Length);
-                File.Copy(file, Path.Combine(targetDir, relSourcePath.TrimStart('/','\\'))); 
+                File.Copy(file, Path.Combine(targetDir, relSourcePath.TrimStart('/', '\\')));
             }
         }
     }

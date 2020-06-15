@@ -5,7 +5,17 @@ VisualStudioVersion = 16.0.29613.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartBackup", "src\SmartBackup.csproj", "{D483E442-B835-406A-814D-223B2D2D7FA9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartBackup.Build", "tools\SmartBackup.Build\SmartBackup.Build.csproj", "{ED2AF054-0670-40BE-A1BE-72C6BB6C8336}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartBackup.Build", "tools\SmartBackup.Build\SmartBackup.Build.csproj", "{ED2AF054-0670-40BE-A1BE-72C6BB6C8336}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartBackup.UnitTests", "tests\SmartBackup.UnitTests\SmartBackup.UnitTests.csproj", "{801D82D0-1EB6-42B3-AC24-089231DC6542}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{60BB1CE9-5DBD-4AB2-BE37-680012B1AAEF}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		global.json = global.json
+		LICENSE = LICENSE
+		NuGet.config = NuGet.config
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +31,10 @@ Global
 		{ED2AF054-0670-40BE-A1BE-72C6BB6C8336}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ED2AF054-0670-40BE-A1BE-72C6BB6C8336}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ED2AF054-0670-40BE-A1BE-72C6BB6C8336}.Release|Any CPU.Build.0 = Release|Any CPU
+		{801D82D0-1EB6-42B3-AC24-089231DC6542}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{801D82D0-1EB6-42B3-AC24-089231DC6542}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{801D82D0-1EB6-42B3-AC24-089231DC6542}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{801D82D0-1EB6-42B3-AC24-089231DC6542}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

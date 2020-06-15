@@ -1,4 +1,4 @@
-﻿using Geheb.SmartBackup.Models;
+using Geheb.SmartBackup.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Abstractions;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,6 +22,7 @@ namespace Geheb.SmartBackup.App
         private readonly BackupParam _backupParam;
         private readonly RecursiveFileEnumerator _recursiveFileEnumerator;
         private readonly SevenZipCli _sevenZipCli;
+        private readonly IFileSystem _fileSystem;
         private readonly object _summaryFileLock = new object();
         private readonly ConcurrentDictionary<string, object> _fileLocks = new ConcurrentDictionary<string, object>();
         private string[] _oldBackupDirectories;
@@ -31,7 +33,8 @@ namespace Geheb.SmartBackup.App
             SHA256Generator hashGenerator,
             BackupParam backupParam,
             RecursiveFileEnumerator recursiveFileEnumerator,
-            SevenZipCli sevenZipCli)
+            SevenZipCli sevenZipCli,
+            IFileSystem fileSystem)
         {
             _hostApplicationLifetime = hostApplicationLifetime;
             _logger = logger;
@@ -39,6 +42,7 @@ namespace Geheb.SmartBackup.App
             _backupParam = backupParam;
             _recursiveFileEnumerator = recursiveFileEnumerator;
             _sevenZipCli = sevenZipCli;
+            _fileSystem = fileSystem;
         }
 
         public async Task ExecuteAsync(CancellationToken cancellationToken)
@@ -47,19 +51,18 @@ namespace Geheb.SmartBackup.App
 
             var start = Stopwatch.StartNew();
             var backupDirName = DateTime.UtcNow.ToString("o").Replace(':', '-');
-            var summaryFile = Path.Combine(_backupParam.TargetDir, backupDirName, "summary" + ReferenceFileExtension);
-            var backupDir = Directory.CreateDirectory(Path.Combine(_backupParam.TargetDir, backupDirName));
+            var summaryFile = _fileSystem.Path.Combine(_backupParam.TargetDir, backupDirName, "summary" + ReferenceFileExtension);
+            var backupDir = _fileSystem.Directory.CreateDirectory(_fileSystem.Path.Combine(_backupParam.TargetDir, backupDirName));
             long count = 0;
             try
             {
-                
                 foreach (var dir in _backupParam.SourceDir)
                 {
                     foreach (var files in _recursiveFileEnumerator.Enumerate(dir, Environment.ProcessorCount))
                     {
                         count += files.Length;
                         _fileLocks.Clear();
-                        var tasks = from file in files select Task.Run(() => BackupFiles(new FileInfo(file), backupDirName, summaryFile, cancellationToken), cancellationToken);
+                        var tasks = from file in files select Task.Run(() => BackupFiles(_fileSystem.FileInfo.FromFileName(file), backupDirName, summaryFile, cancellationToken), cancellationToken);
                         await Task.WhenAll(tasks);
                     }
                 }
@@ -80,16 +83,16 @@ namespace Geheb.SmartBackup.App
 
             foreach (var backupDir in _oldBackupDirectories)
             {
-                var baseFile = Path.Combine(backupDir, sourceFileHash.Substring(0, 2), sourceFileHash);
-                if (File.Exists(baseFile + ".7z") || File.Exists(baseFile + ".7z.001")) return true;
+                var baseFile = _fileSystem.Path.Combine(backupDir, sourceFileHash.Substring(0, 2), sourceFileHash);
+                if (_fileSystem.File.Exists(baseFile + ".7z") || _fileSystem.File.Exists(baseFile + ".7z.001")) return true;
             }
 
             return false;
         }
 
-        private Task BackupFiles(FileInfo sourceFile, string backupDirName, string summaryFile, CancellationToken cancellationToken)
+        private Task BackupFiles(IFileInfo sourceFile, string backupDirName, string summaryFile, CancellationToken cancellationToken)
         {
-            FileInfo targetFile = null;
+            IFileInfo targetFile = null;
             try
             {
                 _logger.LogDebug($"Create SHA256 from file '{sourceFile.FullName}' ...");
@@ -110,7 +113,7 @@ namespace Geheb.SmartBackup.App
 
                 lock (fileLock)
                 {
-                    var backupDir = Path.Combine(_backupParam.TargetDir, backupDirName, sourceFileHash.Substring(0, 2));
+                    var backupDir = _fileSystem.Path.Combine(_backupParam.TargetDir, backupDirName, sourceFileHash.Substring(0, 2));
                     if (CreateReferenceIfFileExists(sourceFile, backupDir, sourceFileHash))
                     {
                         _logger.LogInformation($"Hash already exists, reference created: '{sourceFile.FullName}'");
@@ -121,7 +124,7 @@ namespace Geheb.SmartBackup.App
                         return Task.CompletedTask;
                     }
 
-                    targetFile = new FileInfo(Path.Combine(backupDir, sourceFileHash + ".7z"));
+                    targetFile = _fileSystem.FileInfo.FromFileName(_fileSystem.Path.Combine(backupDir, sourceFileHash + ".7z"));
                     targetFile.Directory.Create();
 
                     _logger.LogDebug($"Create backup from file '{sourceFile.FullName}' ...");
@@ -142,20 +145,20 @@ namespace Geheb.SmartBackup.App
             return Task.CompletedTask;
         }
 
-        private bool CreateReferenceIfFileExists(FileInfo sourceFile, string backupDir, string sourceFileHash)
+        private bool CreateReferenceIfFileExists(IFileInfo sourceFile, string backupDir, string sourceFileHash)
         {
-            if (!Directory.Exists(backupDir)) return false;
+            if (!_fileSystem.Directory.Exists(backupDir)) return false;
 
-            if (!File.Exists(Path.Combine(backupDir, sourceFileHash + ".7z")) &&
-                !File.Exists(Path.Combine(backupDir, sourceFileHash + ".7z.001"))) return false;
+            if (!_fileSystem.File.Exists(_fileSystem.Path.Combine(backupDir, sourceFileHash + ".7z")) &&
+                !_fileSystem.File.Exists(_fileSystem.Path.Combine(backupDir, sourceFileHash + ".7z.001"))) return false;
 
-            AddFileInfo(Path.Combine(backupDir, sourceFileHash + ReferenceFileExtension), sourceFile, sourceFileHash);
+            AddFileInfo(_fileSystem.Path.Combine(backupDir, sourceFileHash + ReferenceFileExtension), sourceFile, sourceFileHash);
             return true;
         }
 
-        private void AddFileInfo(string summaryFile, FileInfo fileInfo, string hash)
+        private void AddFileInfo(string summaryFile, IFileInfo fileInfo, string hash)
         {
-            File.AppendAllText(summaryFile,
+            _fileSystem.File.AppendAllText(summaryFile,
                 fileInfo.FullName + "\t" +
                 fileInfo.LastWriteTimeUtc.ToString("o") + "\t" +
                 fileInfo.Length + "\t" +
@@ -168,7 +171,7 @@ namespace Geheb.SmartBackup.App
 
             var currentBackupDirectories = new SortedDictionary<string, byte>(new DescendedStringComparer(StringComparison.OrdinalIgnoreCase));
 
-            foreach (var dir in Directory.EnumerateDirectories(_backupParam.TargetDir, "*", SearchOption.TopDirectoryOnly))
+            foreach (var dir in _fileSystem.Directory.EnumerateDirectories(_backupParam.TargetDir, "*", SearchOption.TopDirectoryOnly))
             {
                 currentBackupDirectories.Add(dir, 0);
             }
@@ -177,7 +180,7 @@ namespace Geheb.SmartBackup.App
 
             foreach (var dir in currentBackupDirectories.Keys.Skip(_backupParam.MaxBackupSets))
             {
-                Directory.Delete(dir, true);
+                _fileSystem.Directory.Delete(dir, true);
             }
 
             return currentBackupDirectories.Keys.Take(_backupParam.MaxBackupSets).ToArray();

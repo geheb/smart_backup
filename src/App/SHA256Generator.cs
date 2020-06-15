@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.IO;
+using System.IO.Abstractions;
 using System.Security.Cryptography;
 
 namespace Geheb.SmartBackup.App
@@ -8,7 +9,7 @@ namespace Geheb.SmartBackup.App
     {
         private const string EmptyFileHash = "0000000000000000000000000000000000000000000000000000000000000000";
 
-        public string GenerateFrom(FileInfo fileInfo)
+        public string GenerateFrom(IFileInfo fileInfo)
         {
             if (fileInfo.Length < 1)
                 return EmptyFileHash;

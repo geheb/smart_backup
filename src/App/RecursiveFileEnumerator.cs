@@ -1,11 +1,19 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Abstractions;
 
 namespace Geheb.SmartBackup.App
 {
     class RecursiveFileEnumerator
     {
+        private readonly IFileSystem _fileSystem;
+
+        public RecursiveFileEnumerator(IFileSystem fileSystem)
+        {
+            _fileSystem = fileSystem;
+        }
+
         public IEnumerable<string[]> Enumerate(string path, int count)
         {
             if (count < 1) throw new ArgumentOutOfRangeException(nameof(count));
@@ -20,7 +28,7 @@ namespace Geheb.SmartBackup.App
 
             var files = new List<string>();
 
-            foreach (var file in Directory.EnumerateFiles(path, "*", options))
+            foreach (var file in _fileSystem.Directory.EnumerateFiles(path, "*", options))
             {
                 files.Add(file);
                 if (files.Count == count)

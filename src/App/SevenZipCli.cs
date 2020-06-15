@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Linq;
+using System.IO.Abstractions;
 
 namespace Geheb.SmartBackup.App
 {
@@ -11,14 +12,14 @@ namespace Geheb.SmartBackup.App
         private readonly string _cliPath;
         private readonly string[] _ignoreCmpressionForFileExtension = new[] { ".7z", ".zip", ".rar", ".jpg" };
 
-        public SevenZipCli(Env env)
+        public SevenZipCli(Env env, IFileSystem fileSystem)
         {
             _cliPath = Environment.Is64BitProcess ?
-                Path.Combine(env.CurrentProcessDirectory, "7zip", "x64", "7za.exe") :
-                Path.Combine(env.CurrentProcessDirectory, "7zip", "7za.exe");
+                fileSystem.Path.Combine(env.CurrentProcessDirectory, "7zip", "x64", "7za.exe") :
+                fileSystem.Path.Combine(env.CurrentProcessDirectory, "7zip", "7za.exe");
         }
 
-        public void Compress(FileInfo sourceFile, FileInfo targetFile, string password, CancellationToken cancellationToken)
+        public void Compress(IFileInfo sourceFile, IFileInfo targetFile, string password, CancellationToken cancellationToken)
         {
             var args = BuildAddParam(sourceFile, targetFile, password);
 
@@ -26,8 +27,7 @@ namespace Geheb.SmartBackup.App
             {
                 CreateNoWindow = true,
                 WindowStyle = ProcessWindowStyle.Hidden,
-                ErrorDialog = false,
-                WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory
+                ErrorDialog = false
             };
 
             using (var proc = Process.Start(procInfo))
@@ -51,7 +51,7 @@ namespace Geheb.SmartBackup.App
             }
         }
 
-        private string BuildAddParam(FileInfo sourceFile, FileInfo targetFile, string password)
+        private string BuildAddParam(IFileInfo sourceFile, IFileInfo targetFile, string password)
         {
             var split = sourceFile.Length > (1000 * 1000 * 200) ? " -v100M" : string.Empty; // split into 100 mb
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -7,6 +7,7 @@ namespace Geheb.SmartBackup.Build
     static class CommandLineExtensions
     {
         static readonly string[] SupportedArgs = new[] { "--_semver=", "--_githash=" };
+
         public static string GetSemVer(string[] args)
         {
             var verArg = SupportedArgs[0];
@@ -18,10 +19,10 @@ namespace Geheb.SmartBackup.Build
         {
             var gitHashArg = SupportedArgs[1];
             var arg = args.FirstOrDefault(a => a.StartsWith(gitHashArg, StringComparison.OrdinalIgnoreCase));
-            return arg != null ? arg.Substring(gitHashArg.Length) : string.Empty;
+            return arg != null ? arg.Substring(gitHashArg.Length) : null;
         }
 
-        public static string GetSemVerWithGitHash(string[] args)
+        public static string GetSemVerFull(string[] args)
         {
             var semVer = GetSemVer(args);
             var gitHash = GetGitHash(args);
